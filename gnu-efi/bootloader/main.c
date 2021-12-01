@@ -3,22 +3,99 @@
 #include <elf.h>
 #include <stddef.h>
 
-void GetBootFileSystem(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable, void** ptr)
+#define PSF1_MAGIC0 0x36
+#define PSF1_MAGIC1 0x04
+
+typedef struct
+{
+    void* baseAddress;
+    size_t bufferSize;
+    unsigned int width;
+    unsigned int height;
+    unsigned int pixelsPerScanLine;
+} Framebuffer;
+
+typedef struct
+{
+    unsigned char magic[2];
+    unsigned char mode;
+    unsigned char charSize;
+} Psf1Header;
+
+typedef struct
+{
+    Psf1Header* psf1Header;
+    void* glyphBuffer;
+} Psf1Font;
+
+
+int memcmp(const void* aptr, const void* bptr, size_t n)
+{
+    const unsigned char* a = aptr;
+    const unsigned char* b = bptr;
+
+    for (size_t i = 0; i < n; i++)
+    {
+        if (a[i] < b[i]) return -1;
+        else if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
+void InitializeFramebufferStruct(Framebuffer* framebuffer, EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
+{
+    framebuffer->baseAddress = (void*)gop->Mode->FrameBufferBase;
+    framebuffer->bufferSize = gop->Mode->FrameBufferSize;
+    framebuffer->width = gop->Mode->Info->HorizontalResolution;
+    framebuffer->height = gop->Mode->Info->VerticalResolution;
+    framebuffer->pixelsPerScanLine = gop->Mode->Info->PixelsPerScanLine;
+}
+
+Framebuffer framebuffer;
+Framebuffer* InitializeGOP()
+{
+    EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
+    EFI_STATUS status;
+
+    status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
+    if (EFI_ERROR(status))
+    {
+        Print(L"Unable to locate GOP\n\r");
+    }
+    else
+    {
+        Print(L"GOP located\n\r");
+    }
+
+    InitializeFramebufferStruct(&framebuffer, gop);
+
+    Print(L"baseAddress: %x\n\rbufferSize: %x\n\rwidth: %d\n\rheight: %d\n\rpixelsPerScanLine: %d\n\r",
+          framebuffer.baseAddress,
+          framebuffer.bufferSize,
+          framebuffer.width,
+          framebuffer.height,
+          framebuffer.pixelsPerScanLine);
+
+    return &framebuffer;
+}
+
+void GetBootFileSystem(EFI_HANDLE ImageHandle, void** ptr)
 {
     // Get loaded image
     EFI_LOADED_IMAGE_PROTOCOL* loadedImage;
-    SystemTable->BootServices->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (void**)&loadedImage);
+    BS->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (void**)&loadedImage);
 
     // Get file system from loaded image (file system that we booted from)
-    SystemTable->BootServices->HandleProtocol(loadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, ptr);
+    BS->HandleProtocol(loadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, ptr);
 }
 
-EFI_FILE* LoadFile(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
+EFI_FILE* LoadFile(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle)
 {
     EFI_FILE* loadedFile;
 
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fileSystem;
-    GetBootFileSystem(ImageHandle, SystemTable, (void**)&fileSystem);
+    GetBootFileSystem(ImageHandle, (void**)&fileSystem);
 
     // Set file system directory to root if directory is NULL
     if (directory == NULL)
@@ -35,29 +112,52 @@ EFI_FILE* LoadFile(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle, EF
     return loadedFile;
 }
 
-int memcmp(const void* aptr, const void* bptr, size_t n)
+Psf1Font* LoadPsf1Font(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle)
 {
-    const unsigned char* a = aptr;
-    const unsigned char* b = bptr;
+    // Load font file
+    EFI_FILE* font = LoadFile(directory, path, ImageHandle);
+    if (font == NULL) return NULL;
 
-    for (size_t i = 0; i < n; i++)
+    // Store font header in memory
+    Psf1Header* fontHeader;
+    UINTN headerSize = sizeof(Psf1Header);
+    BS->AllocatePool(EfiLoaderData, headerSize, (void**)&fontHeader);
+    font->Read(font, &headerSize, fontHeader);
+
+    // Check if font file has valid header using magic bytes
+    if (fontHeader->magic[0] != PSF1_MAGIC0 || fontHeader->magic[1] != PSF1_MAGIC1)
     {
-        if (a[i] < b[i]) return -1;
-        else if (a[i] > b[i]) return 1;
+        return NULL;
     }
-    return 0;
+
+    // Standard glyph count: 256
+    // If mode is 1, 512 glyph mode
+    UINTN glyphBufferSize = fontHeader->charSize * (fontHeader->mode == 1 ? 512 : 256);
+
+    // Read glyphs into buffer stored in memory
+    void* glyphBuffer;
+    font->SetPosition(font, headerSize);
+    BS->AllocatePool(EfiLoaderData, glyphBufferSize, (void**)&glyphBuffer);
+    font->Read(font, &glyphBufferSize, glyphBuffer);
+
+    // Store struct with font header and glyph buffer addresses into memory
+    Psf1Font* finishedFont;
+    BS->AllocatePool(EfiLoaderData, sizeof(Psf1Font), (void**)&finishedFont);
+    finishedFont->psf1Header = fontHeader;
+    finishedFont->glyphBuffer = glyphBuffer;
+    return finishedFont;
 }
 
-void LoadElf(EFI_SYSTEM_TABLE* SystemTable, EFI_FILE* elfFile, Elf64_Ehdr* elfHeader, UINTN* elfHeaderSize)
+void LoadElf(EFI_FILE* elfFile, Elf64_Ehdr* elfHeader)
 {
     Elf64_Phdr* programHeaders;
     // Set ELF file read position to program header offset (location)
     elfFile->SetPosition(elfFile, elfHeader->e_phoff);
     // Allocate memory for program headers
     UINTN programHeadersSize = elfHeader->e_phnum * elfHeader->e_phentsize;
-    SystemTable->BootServices->AllocatePool(EfiLoaderData, programHeadersSize, (void**)&programHeaders);
+    BS->AllocatePool(EfiLoaderData, programHeadersSize, (void**)&programHeaders);
     // Read program headers into memory
-    elfFile->Read(elfFile, elfHeaderSize, programHeaders);
+    elfFile->Read(elfFile, &programHeadersSize, programHeaders);
 
     // Handle for each program header
     for (Elf64_Phdr* programHeader = programHeaders;
@@ -66,22 +166,20 @@ void LoadElf(EFI_SYSTEM_TABLE* SystemTable, EFI_FILE* elfFile, Elf64_Ehdr* elfHe
     {
         if (programHeader->p_type == PT_LOAD)
         {
-            // Round up (memory size / page size) in order to get number of pages needed
             int pages = (programHeader->p_memsz + 0x1000 - 1) / 0x1000;
             Elf64_Addr segment = programHeader->p_paddr;
-            SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, pages, &segment);
+            BS->AllocatePages(AllocateAddress, EfiLoaderData, pages, &segment);
             // Set ELF file read position to the offset of the program itself
             elfFile->SetPosition(elfFile, programHeader->p_offset);
             UINTN size = programHeader->p_filesz;
             elfFile->Read(elfFile, &size, (void*)segment);
-            break;
         }
     }
 }
 
-EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
+EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE ImageHandle)
 {
-    EFI_FILE* kernel = LoadFile(NULL, L"kernel.elf", ImageHandle, SystemTable);
+    EFI_FILE* kernel = LoadFile(NULL, L"kernel.elf", ImageHandle);
     if (kernel == NULL)
     {
         Print(L"Could not load kernel file\n\r");
@@ -109,7 +207,7 @@ EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE ImageHandle, EFI_SYSTEM_T
         Print(L"Kernel header successfully verified \n\r");
     }
 
-    LoadElf(SystemTable, kernel, elfHeader, &size);
+    LoadElf(kernel, elfHeader);
 
     Print(L"Kernel loaded successfully \n\r");
 
@@ -120,10 +218,23 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
     InitializeLib(ImageHandle, SystemTable);
     Elf64_Ehdr kernelElfHeader;
-    EFI_FILE* kernel = LoadKernel(&kernelElfHeader, ImageHandle, SystemTable);
+    EFI_FILE *kernel = LoadKernel(&kernelElfHeader, ImageHandle);
 
-    int (*KernelStart)() = ((__attribute__((sysv_abi)) int (*)() ) kernelElfHeader.e_entry);
-    Print(L"%d\n\r", KernelStart());
+    void (*KernelStart)(Framebuffer*, Psf1Font*) = ((__attribute__((sysv_abi)) void (*)(Framebuffer*, Psf1Font*)) kernelElfHeader.e_entry);
+
+    Psf1Font *font = LoadPsf1Font(NULL, L"zap-light16.psf", ImageHandle);
+    if (font == NULL)
+    {
+        Print(L"Font is not valid or could not be found.");
+    }
+    else
+    {
+        Print(L"Font loaded. charSize: %d\n\r", font->psf1Header->charSize);
+    }
+
+    Framebuffer* gopFramebuffer = InitializeGOP();
+
+    KernelStart(gopFramebuffer, font);
 
     return EFI_SUCCESS;
 }
