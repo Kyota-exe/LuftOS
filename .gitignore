@@ -2,4 +2,6 @@
 gnu-efi/x86_64/bootloader/main.efi
 kernel/bin/LuftOS.img
 kernel/bin/kernel.elf
-kernel/lib/kernel.o
+kernel/lib/Kernel.o
+kernel/lib/BasicRenderer.o
+kernel/lib/StringConversion.o

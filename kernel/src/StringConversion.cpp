@@ -1,5 +1,6 @@
 #include "StringConversion.h"
 
+// Buffer size is set to 32 because log10(2^64) = 19.27
 char uintToStringOutput[32];
 const char* ToString(uint64_t value)
 {
@@ -56,9 +57,43 @@ const char* ToString(int64_t value)
     return intToStringOutput;
 }
 
+char hexToStringOutput[32];
+const char* ToStringHex(uint64_t value)
+{
+    if (value == 0) return "0x00";
+
+    // Add "0x" to the beginning of the string output
+    hexToStringOutput[0] = '0';
+    hexToStringOutput[1] = 'x';
+
+    uint8_t size = 0;
+    uint64_t num = value;
+    while (num)
+    {
+        size++;
+        num /= 16;
+    }
+
+    for (uint8_t i = 2 + size; i > 2; --i)
+    {
+        uint8_t digit = value % 16;
+        value /= 16;
+        hexToStringOutput[i - 1] = "0123456789ABCDEF"[digit];
+    }
+    hexToStringOutput[2 + size] = 0;
+
+    return hexToStringOutput;
+}
+
+// Buffer size is set to 32 because max decimal places is 20
 char doubleToStringOutput[32];
 const char* ToString(double value, uint8_t decimalPlaces)
 {
+    if (decimalPlaces > 20)
+    {
+        decimalPlaces = 20;
+    }
+
     char* intPtr = (char*)ToString((int64_t)value);
     char* doublePtr = doubleToStringOutput;
 

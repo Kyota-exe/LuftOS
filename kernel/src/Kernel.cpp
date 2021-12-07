@@ -8,6 +8,7 @@ extern "C" void _start(Framebuffer* framebuffer, Psf1Font* psf1Font)
     newRenderer.NewLine();
     newRenderer.Print(ToString((int64_t) -987654321));
     newRenderer.NewLine();
-    newRenderer.Print(ToString((double)-3.14159, 2));
-    return;
+    newRenderer.Print(ToString((double)-3.14159));
+    newRenderer.NewLine();
+    newRenderer.Print(ToStringHex((uint64_t) 0x918236));
 }

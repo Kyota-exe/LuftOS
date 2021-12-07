@@ -5,6 +5,7 @@
 
 const char* ToString(uint64_t value);
 const char* ToString(int64_t value);
-const char* ToString(double value, uint8_t decimalPlaces);
+const char* ToString(double value, uint8_t decimalPlaces = 2);
+const char* ToStringHex(uint64_t value);
 
 #endif
