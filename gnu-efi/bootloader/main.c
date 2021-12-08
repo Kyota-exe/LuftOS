@@ -28,6 +28,15 @@ typedef struct
     void* glyphBuffer;
 } Psf1Font;
 
+typedef struct
+{
+    Framebuffer* framebuffer;
+    Psf1Font* psf1Font;
+    EFI_MEMORY_DESCRIPTOR* memMap;
+    UINTN memMapSize;
+    UINTN memDescSize;
+} BootInfo;
+
 
 int memcmp(const void* aptr, const void* bptr, size_t n)
 {
@@ -52,7 +61,7 @@ void InitializeFramebufferStruct(Framebuffer* framebuffer, EFI_GRAPHICS_OUTPUT_P
 }
 
 Framebuffer framebuffer;
-Framebuffer* InitializeGOP()
+void InitializeGOP(BootInfo* bootInfo)
 {
     EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
     EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
@@ -77,25 +86,25 @@ Framebuffer* InitializeGOP()
           framebuffer.height,
           framebuffer.pixelsPerScanLine);
 
-    return &framebuffer;
+    bootInfo->framebuffer = &framebuffer;
 }
 
-void GetBootFileSystem(EFI_HANDLE ImageHandle, void** ptr)
+void GetBootFileSystem(EFI_HANDLE image, void** ptr)
 {
     // Get loaded image
     EFI_LOADED_IMAGE_PROTOCOL* loadedImage;
-    BS->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (void**)&loadedImage);
+    BS->HandleProtocol(image, &gEfiLoadedImageProtocolGuid, (void**)&loadedImage);
 
     // Get file system from loaded image (file system that we booted from)
     BS->HandleProtocol(loadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, ptr);
 }
 
-EFI_FILE* LoadFile(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle)
+EFI_FILE* LoadFile(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image)
 {
     EFI_FILE* loadedFile;
 
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fileSystem;
-    GetBootFileSystem(ImageHandle, (void**)&fileSystem);
+    GetBootFileSystem(image, (void**)&fileSystem);
 
     // Set file system directory to root if directory is NULL
     if (directory == NULL)
@@ -112,10 +121,10 @@ EFI_FILE* LoadFile(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle)
     return loadedFile;
 }
 
-Psf1Font* LoadPsf1Font(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle)
+Psf1Font* LoadPsf1Font(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, BootInfo* bootInfo)
 {
     // Load font file
-    EFI_FILE* font = LoadFile(directory, path, ImageHandle);
+    EFI_FILE* font = LoadFile(directory, path, image);
     if (font == NULL) return NULL;
 
     // Store font header in memory
@@ -145,6 +154,8 @@ Psf1Font* LoadPsf1Font(EFI_FILE* directory, CHAR16* path, EFI_HANDLE ImageHandle
     BS->AllocatePool(EfiLoaderData, sizeof(Psf1Font), (void**)&finishedFont);
     finishedFont->psf1Header = fontHeader;
     finishedFont->glyphBuffer = glyphBuffer;
+
+    bootInfo->psf1Font = finishedFont;
     return finishedFont;
 }
 
@@ -177,9 +188,9 @@ void LoadElf(EFI_FILE* elfFile, Elf64_Ehdr* elfHeader)
     }
 }
 
-EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE ImageHandle)
+EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE image)
 {
-    EFI_FILE* kernel = LoadFile(NULL, L"kernel.elf", ImageHandle);
+    EFI_FILE* kernel = LoadFile(NULL, L"kernel.elf", image);
     if (kernel == NULL)
     {
         Print(L"Could not load kernel file\n\r");
@@ -214,15 +225,39 @@ EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE ImageHandle)
     return kernel;
 }
 
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
+void InitializeMemoryMap(BootInfo* bootInfo, UINTN* memMapKey)
 {
-    InitializeLib(ImageHandle, SystemTable);
+    EFI_MEMORY_DESCRIPTOR* memMap = NULL;
+    UINTN memMapSize, memDescSize;
+    UINT32 memDescVersion;
+
+    // Get memory map size
+    BS->GetMemoryMap(&memMapSize, memMap, memMapKey, &memDescSize, &memDescVersion);
+
+    // Allocate memory for memory map
+    BS->AllocatePool(EfiLoaderData, memMapSize, (void**)&memMap);
+
+    // Read memory map into memory
+    BS->GetMemoryMap(&memMapSize, memMap, memMapKey, &memDescSize, &memDescVersion);
+
+    // Boot Info Initialization
+    bootInfo->memMap = memMap;
+    bootInfo->memMapSize = memMapSize;
+    bootInfo->memDescSize = memDescSize;
+}
+
+EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE* systemTable)
+{
+    InitializeLib(image, systemTable);
+
+    // Load Kernel ELF
     Elf64_Ehdr kernelElfHeader;
-    EFI_FILE *kernel = LoadKernel(&kernelElfHeader, ImageHandle);
+    EFI_FILE* kernel = LoadKernel(&kernelElfHeader, image);
 
-    void (*KernelStart)(Framebuffer*, Psf1Font*) = ((__attribute__((sysv_abi)) void (*)(Framebuffer*, Psf1Font*)) kernelElfHeader.e_entry);
+    BootInfo bootInfo;
 
-    Psf1Font *font = LoadPsf1Font(NULL, L"zap-light16.psf", ImageHandle);
+    // Load PSF1 font
+    Psf1Font* font = LoadPsf1Font(NULL, L"zap-light16.psf", image, &bootInfo);
     if (font == NULL)
     {
         Print(L"Font is not valid or could not be found.");
@@ -232,9 +267,17 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
         Print(L"Font loaded. charSize: %d\n\r", font->psf1Header->charSize);
     }
 
-    Framebuffer* gopFramebuffer = InitializeGOP();
+    InitializeGOP(&bootInfo);
 
-    KernelStart(gopFramebuffer, font);
+    UINTN memMapKey;
+    InitializeMemoryMap(&bootInfo, &memMapKey);
+
+    // Create function pointer for kernel ELF entry point
+    void (*KernelStart)(BootInfo*) = ((__attribute__((sysv_abi)) void (*)(BootInfo*)) kernelElfHeader.e_entry);
+
+    BS->ExitBootServices(image, memMapKey);
+
+    KernelStart(&bootInfo);
 
     return EFI_SUCCESS;
 }

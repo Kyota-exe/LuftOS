@@ -5,3 +5,4 @@ kernel/bin/kernel.elf
 kernel/lib/Kernel.o
 kernel/lib/BasicRenderer.o
 kernel/lib/StringConversion.o
+kernel/lib/EfiMemory.o
