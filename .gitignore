@@ -5,4 +5,7 @@ kernel/bin/kernel.elf
 kernel/lib/Kernel.o
 kernel/lib/BasicRenderer.o
 kernel/lib/StringConversion.o
-kernel/lib/EfiMemory.o
+kernel/lib/Bitmap.o
+kernel/lib/Memory/Memory.o
+kernel/lib/Memory/EfiMemory.o
+kernel/lib/Memory/PageFrameAllocator.o

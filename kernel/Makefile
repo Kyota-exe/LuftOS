@@ -4,9 +4,8 @@ OSNAME = LuftOS
 GNUEFI = ../gnu-efi
 OVMFDIR = ../OVMFbin
 LDS = kernel.ld
-CC = gcc
 
-CFLAGS = -ffreestanding -fshort-wchar
+CFLAGS = -I./src/ -ffreestanding -fshort-wchar
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
@@ -25,7 +24,7 @@ kernel: $(OBJS) link
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo !==== COMPILING $^
 	@ mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $^ -o $@
+	gcc $(CFLAGS) -c $^ -o $@
 
 link:
 	@ echo !==== LINKING

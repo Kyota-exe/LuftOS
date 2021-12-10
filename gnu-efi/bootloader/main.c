@@ -260,7 +260,7 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE* systemTable)
     Psf1Font* font = LoadPsf1Font(NULL, L"zap-light16.psf", image, &bootInfo);
     if (font == NULL)
     {
-        Print(L"Font is not valid or could not be found.");
+        Print(L"Font is not valid or could not be found\n\r");
     }
     else
     {
