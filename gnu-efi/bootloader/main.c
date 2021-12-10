@@ -67,18 +67,22 @@ void InitializeGOP(BootInfo* bootInfo)
     EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
     EFI_STATUS status;
 
-    status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
+    //status = uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void**)&gop);
+    status = BS->LocateProtocol(&gopGuid, NULL, (void**)&gop);
     if (EFI_ERROR(status))
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
         Print(L"Unable to locate GOP\n\r");
     }
     else
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
         Print(L"GOP located\n\r");
     }
 
     InitializeFramebufferStruct(&framebuffer, gop);
 
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_LIGHTGRAY);
     Print(L"baseAddress: %x\n\rbufferSize: %x\n\rwidth: %d\n\rheight: %d\n\rpixelsPerScanLine: %d\n\r",
           framebuffer.baseAddress,
           framebuffer.bufferSize,
@@ -193,10 +197,12 @@ EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE image)
     EFI_FILE* kernel = LoadFile(NULL, L"kernel.elf", image);
     if (kernel == NULL)
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
         Print(L"Could not load kernel file\n\r");
     }
     else
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
         Print(L"Kernel file loaded successfully\n\r");
     }
 
@@ -211,15 +217,18 @@ EFI_FILE* LoadKernel(Elf64_Ehdr* elfHeader, EFI_HANDLE image)
         elfHeader->e_machine != EM_X86_64 ||
         elfHeader->e_version != EV_CURRENT )
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
         Print(L"Kernel format is bad \n\r");
     }
     else
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
         Print(L"Kernel header successfully verified \n\r");
     }
 
     LoadElf(kernel, elfHeader);
 
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
     Print(L"Kernel loaded successfully \n\r");
 
     return kernel;
@@ -260,11 +269,13 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE* systemTable)
     Psf1Font* font = LoadPsf1Font(NULL, L"zap-light16.psf", image, &bootInfo);
     if (font == NULL)
     {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
         Print(L"Font is not valid or could not be found\n\r");
     }
     else
     {
-        Print(L"Font loaded. charSize: %d\n\r", font->psf1Header->charSize);
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
+        Print(L"Font loaded charSize: %d\n\r", font->psf1Header->charSize);
     }
 
     InitializeGOP(&bootInfo);
