@@ -36,7 +36,7 @@ void PageFrameAllocator::ReadEFIMemoryMap(EfiMemoryDescriptor* memMap, size_t me
     InitBitmap(pageBitmapSize, largestFreeMemSeg);
 
     // Lock pages of bitmap
-    LockPages(&pageBitmap, pageBitmap.size / 4096 + 1);
+    LockPages(pageBitmap.buffer, pageBitmap.size / 4096 + 1);
 
     // Reserve pages of unusable/reserved memory
     for (int i = 0; i < memMapEntryCount; ++i)

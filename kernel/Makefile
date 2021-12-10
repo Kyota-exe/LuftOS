@@ -5,7 +5,7 @@ GNUEFI = ../gnu-efi
 OVMFDIR = ../OVMFbin
 LDS = kernel.ld
 
-CFLAGS = -I./src/ -ffreestanding -fshort-wchar
+CFLAGS = -ffreestanding -fshort-wchar
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
