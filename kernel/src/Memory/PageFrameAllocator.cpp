@@ -1,5 +1,6 @@
 #include "PageFrameAllocator.h"
 
+PageFrameAllocator globalPageFrameAllocator;
 uint64_t freeMemory;
 uint64_t reservedMemory;
 uint64_t usedMemory;

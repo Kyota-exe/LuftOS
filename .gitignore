@@ -11,3 +11,4 @@ kernel/lib/Memory/EfiMemory.o
 kernel/lib/Memory/PageFrameAllocator.o
 kernel/lib/Memory/Paging.o
 kernel/lib/Memory/PageMapIndexer.o
+kernel/lib/Memory/PageTableManager.o
