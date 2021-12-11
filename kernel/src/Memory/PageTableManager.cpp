@@ -54,7 +54,7 @@ void PageTableManager::MapMemory(void* virtAddr, void* physAddr)
         pageDirectoryEntry.address = (uint64_t)pt >> 12;
         pageDirectoryEntry.present = true;
         pageDirectoryEntry.readWrite = true;
-        pd->entries[pageMapIndexer.pdIndex] = pageDirectoryEntry;
+        pd->entries[pageMapIndexer.ptIndex] = pageDirectoryEntry;
     }
     else
     {
