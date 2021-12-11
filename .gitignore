@@ -9,3 +9,5 @@ kernel/lib/Bitmap.o
 kernel/lib/Memory/Memory.o
 kernel/lib/Memory/EfiMemory.o
 kernel/lib/Memory/PageFrameAllocator.o
+kernel/lib/Memory/Paging.o
+kernel/lib/Memory/PageMapIndexer.o
