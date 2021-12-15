@@ -31,8 +31,18 @@ void InitializePaging(BootInfo* bootInfo)
     asm("mov %0, %%cr3" : : "r" (plm4));
 }
 
+void InitializeGDT()
+{
+    GDTDescriptor gdtDescriptor;
+    gdtDescriptor.size = sizeof(GDT) - 1;
+    gdtDescriptor.offset = (uint64_t)&DefaultGDT;
+    LoadGDT(&gdtDescriptor);
+}
+
 extern "C" void _start(BootInfo* bootInfo)
 {
+    InitializeGDT();
+
     // Initialize renderer and page frame allocator
     BasicRenderer renderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font);
 
