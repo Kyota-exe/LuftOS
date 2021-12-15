@@ -33,6 +33,7 @@ void InitializePaging(BootInfo* bootInfo)
 
     uint64_t framebufferBase = (uint64_t)bootInfo->framebuffer->baseAddress;
     uint64_t framebufferSize = (uint64_t)bootInfo->framebuffer->bufferSize;
+    globalPageFrameAllocator.LockPages((void*)framebufferBase, framebufferSize / 4096 + 1);
     for (uint64_t i = framebufferBase; i < framebufferBase + framebufferSize; i += 4096)
     {
         pageTableManager.MapMemory((void*)i, (void*)i);
@@ -54,6 +55,8 @@ extern "C" void _start(BootInfo* bootInfo)
     globalPageFrameAllocator.LockPages(&kernelStart, kernelPageCount);
 
     InitializePaging(bootInfo);
+
+    memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
     renderer.Print("Kernel successfully loaded.");
 }
