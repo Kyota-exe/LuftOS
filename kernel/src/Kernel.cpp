@@ -50,7 +50,7 @@ extern "C" void _start(BootInfo* bootInfo)
     // Clear framebuffer
     memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
-    renderer.Print("Kernel successfully loaded.");
+    renderer.Print("Kernel initialized successfully.");
 
     while (true);
 }
