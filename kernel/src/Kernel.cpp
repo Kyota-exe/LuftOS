@@ -1,22 +1,4 @@
-#include "BasicRenderer.h"
-#include "StringConversion.h"
-#include "Memory/EfiMemory.h"
-#include "Bitmap.h"
-#include "Memory/PageFrameAllocator.h"
-#include "Memory/Paging.h"
-#include "Memory/PageTableManager.h"
-
-struct BootInfo
-{
-    Framebuffer* framebuffer;
-    Psf1Font* psf1Font;
-    EfiMemoryDescriptor* memMap;
-    uint64_t memMapSize;
-    uint64_t memDescSize;
-};
-
-extern uint64_t kernelStart;
-extern uint64_t kernelEnd;
+#include "Kernel.h"
 
 void InitializePaging(BootInfo* bootInfo)
 {
@@ -69,4 +51,6 @@ extern "C" void _start(BootInfo* bootInfo)
     memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
     renderer.Print("Kernel successfully loaded.");
+
+    while (true);
 }
