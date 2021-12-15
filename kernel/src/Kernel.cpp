@@ -1,65 +1,56 @@
-#include "BasicRenderer.h"
-#include "StringConversion.h"
-#include "Memory/EfiMemory.h"
-#include "Memory/Memory.h"
-#include "Bitmap.h"
-#include "Memory/PageFrameAllocator.h"
+#include "Kernel.h"
 
-struct BootInfo
+void InitializePaging(BootInfo* bootInfo)
 {
-    Framebuffer* framebuffer;
-    Psf1Font* psf1Font;
-    EfiMemoryDescriptor* memMap;
-    uint64_t memMapSize;
-    uint64_t memDescSize;
-};
+    // Request a page to store the kernel PLM4 and fill it with 0
+    PageTable* plm4 = (PageTable*) globalPageFrameAllocator.RequestPage();
+    memset(plm4, 0, 0x1000);
 
-extern uint64_t kernelStart;
-extern uint64_t kernelEnd;
+    // Initialize kernel PLM4 so that it is mapped linearly (virt 0x1000 -> phys 0x1000, virt 0x3237 -> phys 0x3237, etc.)
+    PageTableManager pageTableManager = PageTableManager(plm4);
+    uint64_t memMapEntryCount = bootInfo->memMapSize / bootInfo->memDescSize;
+    uint64_t totalMemory = GetTotalMemorySize(bootInfo->memMap, memMapEntryCount, bootInfo->memDescSize);
+    for (uint64_t i = 0; i < totalMemory; i += 4096)
+    {
+        pageTableManager.MapMemory((void*) i, (void*) i);
+    }
+
+    uint64_t framebufferBase = (uint64_t)bootInfo->framebuffer->baseAddress;
+    uint64_t framebufferSize = (uint64_t)bootInfo->framebuffer->bufferSize;
+
+    // Lock the pages for the framebuffer to prevent it from being overridden
+    globalPageFrameAllocator.LockPages((void*)framebufferBase, framebufferSize / 4096 + 1);
+
+    // Make sure the virt address for the framebuffer is identical to its physical address
+    for (uint64_t i = framebufferBase; i < framebufferBase + framebufferSize; i += 4096)
+    {
+        pageTableManager.MapMemory((void*)i, (void*)i);
+    }
+
+    // Activate paging
+    asm("mov %0, %%cr3" : : "r" (plm4));
+}
 
 extern "C" void _start(BootInfo* bootInfo)
 {
+    // Initialize renderer and page frame allocator
     BasicRenderer renderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font);
 
-    uint64_t memMapEntryCount = bootInfo->memMapSize / bootInfo->memDescSize;
+    // Initialize global page frame allocator
+    globalPageFrameAllocator = PageFrameAllocator();
+    globalPageFrameAllocator.ReadEFIMemoryMap(bootInfo->memMap, bootInfo->memMapSize, bootInfo->memDescSize);
 
-    PageFrameAllocator pageFrameAllocator;
-    pageFrameAllocator.ReadEFIMemoryMap(bootInfo->memMap, bootInfo->memMapSize, bootInfo->memDescSize);
-
-    renderer.Print("Kernel start: ");
-    renderer.Print(ToStringHex((uint64_t)&kernelStart / 1024));
-    renderer.NewLine();
-
+    // UEFI seems to already lock the kernel pages, but just in case, lock the kernel pages.
     uint64_t kernelSize = (uint64_t) &kernelEnd - (uint64_t) &kernelStart;
     uint64_t kernelPageCount = (uint64_t) kernelSize / 4096 + 1;
+    globalPageFrameAllocator.LockPages(&kernelStart, kernelPageCount);
 
-    // UEFI seems to already lock the kernel pages, but just in case.
-    pageFrameAllocator.LockPages(&kernelStart, kernelPageCount);
+    InitializePaging(bootInfo);
 
-    renderer.Print("Free RAM: ");
-    renderer.Print(ToString(pageFrameAllocator.GetFreeRAM() / 1024));
-    renderer.Print(" KB");
-    renderer.NewLine();
+    // Clear framebuffer
+    memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
-    renderer.Print("Used RAM: ");
-    renderer.Print(ToString(pageFrameAllocator.GetUsedRAM() / 1024));
-    renderer.Print(" KB");
-    renderer.NewLine();
+    renderer.Print("Kernel initialized successfully.");
 
-    renderer.Print("Reserved RAM: ");
-    renderer.Print(ToString(pageFrameAllocator.GetReservedRAM() / 1024));
-    renderer.Print(" KB");
-    renderer.NewLine();
-
-    renderer.Print("Total memory: ");
-    renderer.Print(ToString(GetTotalMemorySize(bootInfo->memMap, memMapEntryCount, bootInfo->memDescSize) / 1024));
-    renderer.Print(" KB");
-    renderer.NewLine();
-
-    for (int i = 0; i < 20; ++i)
-    {
-        void* address = pageFrameAllocator.RequestPage();
-        renderer.Print(ToStringHex((uint64_t)address));
-        renderer.NewLine();
-    }
+    while (true);
 }

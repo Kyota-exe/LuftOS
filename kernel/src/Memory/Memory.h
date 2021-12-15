@@ -5,5 +5,6 @@
 #include "EfiMemory.h"
 
 uint64_t GetTotalMemorySize(EfiMemoryDescriptor* memMap, uint64_t memMapEntryCount, uint64_t memMapDescSize);
+void memset(void* start, uint8_t value, uint64_t num);
 
 #endif

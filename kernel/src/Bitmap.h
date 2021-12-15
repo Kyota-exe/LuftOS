@@ -11,7 +11,7 @@ public:
     uint8_t* buffer;
 
     bool operator[](uint64_t index);
-    void Set(uint64_t index, bool value);
+    bool Set(uint64_t index, bool value);
 };
 
 #endif
