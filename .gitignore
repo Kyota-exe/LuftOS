@@ -1,7 +1,12 @@
+# Rider
 /.idea
+
+# Generated files
 gnu-efi/x86_64/bootloader/main.efi
 kernel/bin/LuftOS.img
 kernel/bin/kernel.elf
+
+# Object files
 kernel/lib/Kernel.o
 kernel/lib/BasicRenderer.o
 kernel/lib/StringConversion.o
