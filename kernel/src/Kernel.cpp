@@ -46,6 +46,8 @@ extern "C" void _start(BootInfo* bootInfo)
 {
     // Initialize renderer and page frame allocator
     BasicRenderer renderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font);
+
+    // Initialize global page frame allocator
     globalPageFrameAllocator = PageFrameAllocator();
     globalPageFrameAllocator.ReadEFIMemoryMap(bootInfo->memMap, bootInfo->memMapSize, bootInfo->memDescSize);
 
@@ -56,6 +58,7 @@ extern "C" void _start(BootInfo* bootInfo)
 
     InitializePaging(bootInfo);
 
+    // Clear framebuffer
     memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
     renderer.Print("Kernel successfully loaded.");
