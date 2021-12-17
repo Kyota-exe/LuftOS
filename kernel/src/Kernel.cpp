@@ -58,7 +58,7 @@ extern "C" void _start(BootInfo* bootInfo)
     InitializePaging(bootInfo);
 
     // Clear framebuffer
-    memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
+    //memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
     renderer.Print("Kernel initialized successfully.");
 
