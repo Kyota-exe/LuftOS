@@ -2,9 +2,13 @@
 #include <efilib.h>
 #include <elf.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define PSF1_MAGIC0 0x36
 #define PSF1_MAGIC1 0x04
+
+#define BMP_MAGIC0 'B'
+#define BMP_MAGIC1 'M'
 
 typedef struct
 {
@@ -27,6 +31,48 @@ typedef struct
     Psf1Header* psf1Header;
     void* glyphBuffer;
 } Psf1Font;
+
+typedef struct
+{
+    unsigned char magic[2];
+    unsigned char fileSize[4];
+    unsigned char reserved0[2];
+    unsigned char reserved1[2];
+    unsigned char offset[4];
+} BMPHeader;
+
+typedef struct
+{
+    uint32_t dibSize;
+    uint32_t width; // LONG
+    uint32_t height; // LONG
+    uint16_t planesCount;
+    uint16_t bitsPerPixel;
+    uint32_t compressionMethod;
+    uint32_t bitmapSize;
+    uint32_t printWidth; // LONG
+    uint32_t printHeight; // LONG
+    uint32_t colorCountInColorPalette;
+    uint32_t importantColors;
+    uint32_t redBitMask;
+    uint32_t greenBitMask;
+    uint32_t blueBitMask;
+    uint32_t alphaBitMask;
+    uint32_t colorSpace;
+    unsigned char endpoints[36];
+    uint32_t gammaRed;
+    uint32_t gammaGreen;
+    uint32_t gammaBlue;
+    uint32_t intent;
+    uint32_t profileData;
+    uint32_t profileSize;
+    uint32_t reserved;
+} BITMAPV5HEADER;
+
+typedef struct
+{
+
+} BMPImage;
 
 typedef struct
 {
@@ -163,6 +209,52 @@ Psf1Font* LoadPsf1Font(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     return finishedFont;
 }
 
+BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, BootInfo* bootInfo)
+{
+    // Load BMP file
+    EFI_FILE* bmpFile = LoadFile(directory, path, image);
+    if (bmpFile == NULL)
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
+        Print(L"An error occurred while attempting to load BMP file\n\r");
+        return NULL;
+    }
+
+    // Store BMP header in memory
+    BMPHeader* bmpHeader;
+    UINTN headerSize = sizeof(BMPHeader);
+    BS->AllocatePool(EfiLoaderData, headerSize, (void**)&bmpHeader);
+    bmpFile->Read(bmpFile, &headerSize, bmpHeader);
+
+    // Check if BMP file has valid header using magic bytes
+    if (bmpHeader->magic[0] != BMP_MAGIC0 || bmpHeader->magic[1] != BMP_MAGIC1)
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
+        Print(L"An error occurred while attempting to load BMP file\n\r");
+        return NULL;
+    }
+
+    UINTN dibSize;
+    bmpFile->SetPosition(bmpFile, headerSize);
+    UINTN dibSizeSize = 4;
+    bmpFile->Read(bmpFile, &dibSizeSize, &dibSize);
+    if (dibSize != 124)
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
+        Print(L"Invalid or unsupported BMP file format\n\r");
+        return NULL;
+    }
+
+    BITMAPV5HEADER* dibHeader;
+    BS->AllocatePool(EfiLoaderData, dibSize, (void**)&dibHeader);
+    bmpFile->Read(bmpFile, &dibSize, dibHeader);
+    Print(L"Width: %d\n\r", dibHeader->width);
+    Print(L"Height: %d\n\r", dibHeader->height);
+    Print(L"%d\n\r", dibHeader->compressionMethod);
+
+    return NULL;
+}
+
 void LoadElf(EFI_FILE* elfFile, Elf64_Ehdr* elfHeader)
 {
     Elf64_Phdr* programHeaders;
@@ -277,6 +369,9 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE* systemTable)
         ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
         Print(L"Font loaded charSize: %d\n\r", font->psf1Header->charSize);
     }
+
+    // Load BMP desktop background image
+    BMPImage* bmpImage = LoadBMPImage(NULL, L"Desktop-Background.bmp", image, &bootInfo);
 
     InitializeGOP(&bootInfo);
 
