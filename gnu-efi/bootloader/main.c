@@ -14,16 +14,16 @@ typedef struct
 {
     void* baseAddress;
     size_t bufferSize;
-    unsigned int width;
-    unsigned int height;
-    unsigned int pixelsPerScanLine;
+    uint32_t width;
+    uint32_t height;
+    uint32_t pixelsPerScanLine;
 } Framebuffer;
 
-typedef struct
+typedef struct __attribute__((packed))
 {
     unsigned char magic[2];
-    unsigned char mode;
-    unsigned char charSize;
+    uint8_t mode;
+    uint8_t charSize;
 } Psf1Header;
 
 typedef struct
@@ -32,16 +32,16 @@ typedef struct
     void* glyphBuffer;
 } Psf1Font;
 
-typedef struct
+typedef struct __attribute__((packed))
 {
     unsigned char magic[2];
-    unsigned char fileSize[4];
-    unsigned char reserved0[2];
-    unsigned char reserved1[2];
-    unsigned char offset[4];
+    uint32_t fileSize;
+    uint16_t reserved0;
+    uint16_t reserved1;
+    uint32_t offset;
 } BMPHeader;
 
-typedef struct
+typedef struct __attribute__((packed))
 {
     uint32_t dibSize;
     uint32_t width; // LONG
@@ -71,13 +71,21 @@ typedef struct
 
 typedef struct
 {
-
+    uint32_t width;
+    uint32_t height;
+    uint32_t bitmapSize;
+    void* bitmapBuffer;
+    uint32_t redBitMask;
+    uint32_t greenBitMask;
+    uint32_t blueBitMask;
+    uint32_t alphaBitMask;
 } BMPImage;
 
 typedef struct
 {
     Framebuffer* framebuffer;
     Psf1Font* psf1Font;
+    BMPImage* bmpImage;
     EFI_MEMORY_DESCRIPTOR* memMap;
     UINTN memMapSize;
     UINTN memDescSize;
@@ -97,6 +105,7 @@ int memcmp(const void* aptr, const void* bptr, size_t n)
     return 0;
 }
 
+Framebuffer framebuffer;
 void InitializeFramebufferStruct(Framebuffer* framebuffer, EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
 {
     framebuffer->baseAddress = (void*)gop->Mode->FrameBufferBase;
@@ -106,7 +115,6 @@ void InitializeFramebufferStruct(Framebuffer* framebuffer, EFI_GRAPHICS_OUTPUT_P
     framebuffer->pixelsPerScanLine = gop->Mode->Info->PixelsPerScanLine;
 }
 
-Framebuffer framebuffer;
 void InitializeGOP(BootInfo* bootInfo)
 {
     EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
@@ -238,7 +246,7 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     bmpFile->SetPosition(bmpFile, headerSize);
     UINTN dibSizeSize = 4;
     bmpFile->Read(bmpFile, &dibSizeSize, &dibSize);
-    if (dibSize != 124)
+    if (dibSize != 124) // BITMAPV5HEADER
     {
         ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
         Print(L"Invalid or unsupported BMP file format\n\r");
@@ -246,13 +254,60 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     }
 
     BITMAPV5HEADER* dibHeader;
+    bmpFile->SetPosition(bmpFile, headerSize);
     BS->AllocatePool(EfiLoaderData, dibSize, (void**)&dibHeader);
     bmpFile->Read(bmpFile, &dibSize, dibHeader);
+
+    Print(L"DIB Size: %d\n\r", dibHeader->dibSize);
     Print(L"Width: %d\n\r", dibHeader->width);
     Print(L"Height: %d\n\r", dibHeader->height);
-    Print(L"%d\n\r", dibHeader->compressionMethod);
 
-    return NULL;
+    if (dibHeader->bitsPerPixel != 32)
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
+        Print(L"Unsupported BPP in BMP file\n\r");
+        return NULL;
+    }
+
+    if (dibHeader->compressionMethod != 3) // BI_BITFIELDS
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
+        Print(L"Unsupported BMP file compression format\n\r");
+        return NULL;
+    }
+
+    void* bitmapBuffer;
+    UINTN bitmapSize = dibHeader->bitmapSize;
+    bmpFile->SetPosition(bmpFile, bmpHeader->offset);
+    BS->AllocatePool(EfiLoaderData, dibHeader->bitmapSize, (void**)&bitmapBuffer);
+
+    Print(L"Reading BMP file contents...\n\r");
+    bmpFile->Read(bmpFile, &bitmapSize, bitmapBuffer);
+    Print(L"Successfully read BMP File contents into memory.\n\r");
+
+    BMPImage* bmpImage;
+    BS->AllocatePool(EfiLoaderData, sizeof(BMPImage), (void**)&bmpImage);
+
+    bmpImage->width = dibHeader->width;
+    bmpImage->height = dibHeader->height;
+    bmpImage->bitmapSize = dibHeader->bitmapSize;
+    bmpImage->bitmapBuffer = bitmapBuffer;
+    bmpImage->alphaBitMask = dibHeader->alphaBitMask;
+    bmpImage->redBitMask = dibHeader->redBitMask;
+    bmpImage->greenBitMask = dibHeader->greenBitMask;
+    bmpImage->blueBitMask = dibHeader->blueBitMask;
+
+    Print(L"Red bitmask: %x\n\r", dibHeader->redBitMask);
+    // Red 00000000 11111111 00000000 00000000
+    // Green 00000000 00000000 11111111 00000000
+    // Blue 00000000 00000000 00000000 11111111
+    // Alpha 11111111 00000000 00000000 00000000
+    Print(L"Green bitmask: %x\n\r", dibHeader->greenBitMask);
+    Print(L"Blue bitmask: %x\n\r", dibHeader->blueBitMask);
+    Print(L"Alpha bitmask: %x\n\r", dibHeader->alphaBitMask);
+
+    bootInfo->bmpImage = bmpImage;
+    return bmpImage;
 }
 
 void LoadElf(EFI_FILE* elfFile, Elf64_Ehdr* elfHeader)
@@ -372,6 +427,16 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE* systemTable)
 
     // Load BMP desktop background image
     BMPImage* bmpImage = LoadBMPImage(NULL, L"Desktop-Background.bmp", image, &bootInfo);
+    if (bmpImage == NULL)
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
+        Print(L"Could not load BMP image\n\r");
+    }
+    else
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_GREEN);
+        Print(L"BMP image loaded %dx%d\n\r", bmpImage->width, bmpImage->height);
+    }
 
     InitializeGOP(&bootInfo);
 
