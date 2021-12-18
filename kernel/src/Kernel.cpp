@@ -60,16 +60,8 @@ extern "C" void _start(BootInfo* bootInfo)
     // Clear framebuffer
     memset(bootInfo->framebuffer->baseAddress, 0, bootInfo->framebuffer->bufferSize);
 
-    // RENDER BMP
-    for (unsigned int y = 0; y < bootInfo->bmpImage->height; ++y)
-    {
-        for (unsigned int x = 0; x < bootInfo->bmpImage->width; ++x)
-        {
-            unsigned int* ptr = (unsigned int*)bootInfo->framebuffer->baseAddress + bootInfo->bmpImage->width * y + x;
-            unsigned int* pixPtr = (unsigned int*)bootInfo->bmpImage->bitmapBuffer + (bootInfo->bmpImage->height - 1 - y) * bootInfo->bmpImage->width + x;
-            *ptr = *pixPtr;
-        }
-    }
+    // Render desktop background
+    renderer.FullScreenRenderBMP(bootInfo->bmpImage);
 
     renderer.Print("Kernel initialized successfully.");
     renderer.NewLine();

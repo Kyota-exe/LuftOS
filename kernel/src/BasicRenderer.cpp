@@ -45,3 +45,24 @@ void BasicRenderer::NewLine()
     cursorPosition.x = 0;
     cursorPosition.y += CHAR_HEIGHT;
 }
+
+void BasicRenderer::FullScreenRenderBMP(BMPImage* bmpImage)
+{
+    if (bmpImage->height != targetFramebuffer->height || bmpImage->width != targetFramebuffer->width)
+    {
+        uint32_t previousColour = colour;
+        colour = 0xffff0000;
+        Print("BMP image is not the same resolution as the screen resolution!");
+        colour = previousColour;
+    }
+
+    for (unsigned long y = 0; y < bootInfo->bmpImage->height; ++y)
+    {
+        for (unsigned long x = 0; x < bootInfo->bmpImage->width; ++x)
+        {
+            unsigned int* framebufferPtr = (unsigned int*)bootInfo->framebuffer->baseAddress + bootInfo->bmpImage->width * y + x;
+            unsigned int* pixPtr = (unsigned int*)bootInfo->bmpImage->bitmapBuffer + (bootInfo->bmpImage->height - 1 - y) * bootInfo->bmpImage->width + x;
+            *ptr = *pixPtr;
+        }
+    }
+}

@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-uint8_t TrailingZeroBitsRight(uint32_t bitPattern);
+uint8_t TrailingZeroBitsRight(uint32_t bitPattern);v
 
 #endif
