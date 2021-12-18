@@ -4,6 +4,7 @@
 #include "Math.h"
 #include "Framebuffer.h"
 #include "SimpleFonts.h"
+#include <stdint.h>
 
 class BasicRenderer
 {
@@ -11,7 +12,7 @@ public:
     Framebuffer* targetFramebuffer;
     Psf1Font* psf1Font;
     UIntVector2 cursorPosition;
-    unsigned int colour;
+    uint32_t colour;
 
     void Print(const char* str);
     void PutChar(char c, unsigned int xOffset, unsigned int yOffset);
