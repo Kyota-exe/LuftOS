@@ -9,11 +9,13 @@
 #include "Memory/Paging.h"
 #include "Memory/PageTableManager.h"
 #include "GDT/GDT.h"
+#include "BMPImageFile.h"
 
 struct BootInfo
 {
     Framebuffer* framebuffer;
     Psf1Font* psf1Font;
+    BMPImage* bmpImage;
     EfiMemoryDescriptor* memMap;
     uint64_t memMapSize;
     uint64_t memDescSize;
