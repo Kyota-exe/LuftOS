@@ -4,6 +4,8 @@
 #include "Math.h"
 #include "Framebuffer.h"
 #include "SimpleFonts.h"
+#include "BMPImageFile.h"
+#include <stdint.h>
 
 class BasicRenderer
 {
@@ -11,11 +13,12 @@ public:
     Framebuffer* targetFramebuffer;
     Psf1Font* psf1Font;
     UIntVector2 cursorPosition;
-    unsigned int colour;
+    uint32_t colour;
 
     void Print(const char* str);
     void PutChar(char c, unsigned int xOffset, unsigned int yOffset);
     void NewLine();
+    void FullScreenRenderBMP(BMPImage* bmpImage);
 
     BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Font,
                   UIntVector2 _cursorPosition = {0, 0},
