@@ -45,10 +45,11 @@ setup:
 
 buildimg:
 	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=93750
-	mformat -i $(BUILDDIR)/$(OSNAME).img -f 1440 ::
+	mformat -i $(BUILDDIR)/$(OSNAME).img -F ::
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/EFI
 	mmd -i $(BUILDDIR)/$(OSNAME).img ::/EFI/BOOT
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BOOTEFI) ::/EFI/BOOT
 	mcopy -i $(BUILDDIR)/$(OSNAME).img startup.nsh ::
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/kernel.elf ::
-	mcopy -i $(BUILDDIR)/$(OSNAME).img fonts/zap-light16.psf ::
+	mcopy -i $(BUILDDIR)/$(OSNAME).img files/zap-light16.psf ::
+	mcopy -i $(BUILDDIR)/$(OSNAME).img files/Desktop-Background.bmp ::
