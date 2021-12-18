@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "EfiMemory.h"
 #include "Memory.h"
-#include "../Bitmap.h"
+#include "../Utilities/Bitmap.h"
 
 class PageFrameAllocator
 {

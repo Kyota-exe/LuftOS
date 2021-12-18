@@ -44,6 +44,11 @@ void BasicRenderer::NewLine()
 {
     cursorPosition.x = 0;
     cursorPosition.y += CHAR_HEIGHT;
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 }
 
 void BasicRenderer::FullScreenRenderBMP(BMPImage* bmpImage)
@@ -56,6 +61,7 @@ void BasicRenderer::FullScreenRenderBMP(BMPImage* bmpImage)
         colour = previousColour;
     }
 
+<<<<<<< Updated upstream
     for (unsigned long y = 0; y < bootInfo->bmpImage->height; ++y)
     {
         for (unsigned long x = 0; x < bootInfo->bmpImage->width; ++x)
@@ -65,4 +71,16 @@ void BasicRenderer::FullScreenRenderBMP(BMPImage* bmpImage)
             *ptr = *pixPtr;
         }
     }
+=======
+    for (unsigned long y = 0; y < bmpImage->height; ++y)
+    {
+        for (unsigned long x = 0; x < bmpImage->width; ++x)
+        {
+            unsigned int* framebufferPtr = (unsigned int*)targetFramebuffer->baseAddress + bmpImage->width * y + x;
+            unsigned int* pixPtr = (unsigned int*)bmpImage->bitmapBuffer + (bmpImage->height - 1 - y) * bmpImage->width + x;
+            *framebufferPtr = *pixPtr;
+        }
+    }
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 }
