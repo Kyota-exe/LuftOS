@@ -8,6 +8,7 @@ kernel/bin/kernel.elf
 
 # Object files
 kernel/lib/Utilities/Bitmap.o
+kernel/lib/Utilities/BitwiseUtilities.o
 kernel/lib/Kernel.o
 kernel/lib/BasicRenderer.o
 kernel/lib/StringConversion.o
@@ -18,3 +19,5 @@ kernel/lib/Memory/Paging.o
 kernel/lib/Memory/PageMapIndexer.o
 kernel/lib/Memory/PageTableManager.o
 kernel/lib/GUI/GUIRenderer.o
+kernel/lib/GDT/GDT.o
+kernel/lib/GDT/gdt_asm.o
