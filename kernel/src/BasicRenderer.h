@@ -1,7 +1,7 @@
 #ifndef LUFTOS_BASICRENDERER_H
 #define LUFTOS_BASICRENDERER_H
 
-#include "Math.h"
+#include "Utilities/Math.h"
 #include "Framebuffer.h"
 #include "SimpleFonts.h"
 #include "BMPImageFile.h"

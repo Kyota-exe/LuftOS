@@ -1,6 +1,11 @@
 #ifndef LUFTOS_BMPIMAGEFILE_H
 #define LUFTOS_BMPIMAGEFILE_H
 
+<<<<<<< Updated upstream
+=======
+#include <stdint.h>
+
+>>>>>>> Stashed changes
 typedef struct
 {
     uint32_t width;

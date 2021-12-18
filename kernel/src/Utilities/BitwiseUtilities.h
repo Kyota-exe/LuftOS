@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+<<<<<<< Updated upstream
 uint8_t TrailingZeroBitsRight(uint32_t bitPattern);v
+=======
+uint8_t TrailingZeroBitsRight(uint32_t bitPattern);
+>>>>>>> Stashed changes
 
 #endif

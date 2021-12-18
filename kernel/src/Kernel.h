@@ -4,7 +4,7 @@
 #include "BasicRenderer.h"
 #include "StringConversion.h"
 #include "Memory/EfiMemory.h"
-#include "Bitmap.h"
+#include "Utilities/Bitmap.h"
 #include "Memory/PageFrameAllocator.h"
 #include "Memory/Paging.h"
 #include "Memory/PageTableManager.h"
