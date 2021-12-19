@@ -5,7 +5,7 @@
 
 struct Framebuffer
 {
-    void* baseAddress;
+    unsigned int* baseAddress;
     size_t bufferSize;
     unsigned int width;
     unsigned int height;

@@ -10,6 +10,7 @@
 #include "Memory/PageTableManager.h"
 #include "GDT/GDT.h"
 #include "BMPImageFile.h"
+#include "GUI/GUIRenderer.h"
 
 struct BootInfo
 {

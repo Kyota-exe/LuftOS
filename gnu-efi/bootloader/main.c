@@ -12,7 +12,7 @@
 
 typedef struct
 {
-    void* baseAddress;
+    uint32_t* baseAddress;
     size_t bufferSize;
     uint32_t width;
     uint32_t height;
@@ -29,7 +29,7 @@ typedef struct __attribute__((packed))
 typedef struct
 {
     Psf1Header* psf1Header;
-    void* glyphBuffer;
+    char* glyphBuffer;
 } Psf1Font;
 
 typedef struct __attribute__((packed))
@@ -63,18 +63,18 @@ typedef struct __attribute__((packed))
     uint32_t gammaRed;
     uint32_t gammaGreen;
     uint32_t gammaBlue;
-    uint32_t intent;
-    uint32_t profileData;
-    uint32_t profileSize;
-    uint32_t reserved;
-} BITMAPV5HEADER;
+//    uint32_t intent;
+//    uint32_t profileData;
+//    uint32_t profileSize;
+//    uint32_t reserved;
+} BITMAPV4HEADER;
 
 typedef struct
 {
     uint32_t width;
     uint32_t height;
     uint32_t bitmapSize;
-    void* bitmapBuffer;
+    uint32_t* bitmapBuffer;
     uint32_t redBitMask;
     uint32_t greenBitMask;
     uint32_t blueBitMask;
@@ -202,7 +202,7 @@ Psf1Font* LoadPsf1Font(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     UINTN glyphBufferSize = fontHeader->charSize * (fontHeader->mode == 1 ? 512 : 256);
 
     // Read glyphs into buffer stored in memory
-    void* glyphBuffer;
+    char* glyphBuffer;
     font->SetPosition(font, headerSize);
     BS->AllocatePool(EfiLoaderData, glyphBufferSize, (void**)&glyphBuffer);
     font->Read(font, &glyphBufferSize, glyphBuffer);
@@ -246,14 +246,19 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     bmpFile->SetPosition(bmpFile, headerSize);
     UINTN dibSizeSize = 4;
     bmpFile->Read(bmpFile, &dibSizeSize, &dibSize);
-    if (dibSize != 124) // BITMAPV5HEADER
+    Print(L"dibSize: %d\n\r", dibSize);
+    if (dibSize != 124 && dibSize != 108) // BITMAPV4HEADER or BITMAPV5HEADER
     {
         ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
-        Print(L"Invalid or unsupported BMP file format\n\r");
+        Print(L"Invalid or unsupported BMP DIB header\n\r");
         return NULL;
     }
 
-    BITMAPV5HEADER* dibHeader;
+    // The BITMAPV5HEADER has the same structure as the BITMAPV4HEADER except for 4 uint32_t at the end
+    // that are not necessary for the rendering of the bitmap. (for now)
+    // As such, we only need to read the first 108 bytes of the BITMAPV5HEADER.
+    if (dibSize == 124) dibSize = 108;
+    BITMAPV4HEADER* dibHeader;
     bmpFile->SetPosition(bmpFile, headerSize);
     BS->AllocatePool(EfiLoaderData, dibSize, (void**)&dibHeader);
     bmpFile->Read(bmpFile, &dibSize, dibHeader);
@@ -276,7 +281,7 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
         return NULL;
     }
 
-    void* bitmapBuffer;
+    uint32_t* bitmapBuffer;
     UINTN bitmapSize = dibHeader->bitmapSize;
     bmpFile->SetPosition(bmpFile, bmpHeader->offset);
     BS->AllocatePool(EfiLoaderData, dibHeader->bitmapSize, (void**)&bitmapBuffer);
@@ -296,15 +301,6 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     bmpImage->redBitMask = dibHeader->redBitMask;
     bmpImage->greenBitMask = dibHeader->greenBitMask;
     bmpImage->blueBitMask = dibHeader->blueBitMask;
-
-    Print(L"Red bitmask: %x\n\r", dibHeader->redBitMask);
-    // Red 00000000 11111111 00000000 00000000
-    // Green 00000000 00000000 11111111 00000000
-    // Blue 00000000 00000000 00000000 11111111
-    // Alpha 11111111 00000000 00000000 00000000
-    Print(L"Green bitmask: %x\n\r", dibHeader->greenBitMask);
-    Print(L"Blue bitmask: %x\n\r", dibHeader->blueBitMask);
-    Print(L"Alpha bitmask: %x\n\r", dibHeader->alphaBitMask);
 
     bootInfo->bmpImage = bmpImage;
     return bmpImage;

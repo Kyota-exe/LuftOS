@@ -11,7 +11,7 @@ struct Psf1Header
 struct Psf1Font
 {
     Psf1Header* psf1Header;
-    void* glyphBuffer;
+    char* glyphBuffer;
 };
 
 #endif

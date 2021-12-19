@@ -7,8 +7,8 @@ BasicRenderer::BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Fon
 
 void BasicRenderer::PutChar(char c, unsigned int xOffset, unsigned int yOffset)
 {
-    unsigned int* pixPtr = (unsigned int*)targetFramebuffer->baseAddress;
-    char* glyphPtr = (char*)psf1Font->glyphBuffer + (c * psf1Font->psf1Header->charSize);
+    unsigned int* pixPtr = targetFramebuffer->baseAddress;
+    char* glyphPtr = psf1Font->glyphBuffer + (c * psf1Font->psf1Header->charSize);
     // 16 and 8 (glyph pixel size) are hardcoded
     for (unsigned long y = yOffset; y < yOffset + CHAR_HEIGHT; y++)
     {
@@ -16,7 +16,7 @@ void BasicRenderer::PutChar(char c, unsigned int xOffset, unsigned int yOffset)
         {
             if ((*glyphPtr & (0b10000000 >> (x - xOffset))) > 0)
             {
-                *(unsigned int*)(pixPtr + x + (y * targetFramebuffer->pixelsPerScanLine)) = colour;
+                *(pixPtr + x + (y * targetFramebuffer->pixelsPerScanLine)) = colour;
             }
         }
         glyphPtr++;
@@ -53,15 +53,17 @@ void BasicRenderer::FullScreenRenderBMP(BMPImage* bmpImage)
         uint32_t previousColour = colour;
         colour = 0xffff0000;
         Print("BMP image is not the same resolution as the screen resolution!");
+        NewLine();
         colour = previousColour;
     }
 
+    // Bottom-up rendering
     for (unsigned long y = 0; y < bmpImage->height; ++y)
     {
         for (unsigned long x = 0; x < bmpImage->width; ++x)
         {
-            unsigned int* framebufferPtr = (unsigned int*)targetFramebuffer->baseAddress + bmpImage->width * y + x;
-            unsigned int* pixPtr = (unsigned int*)bmpImage->bitmapBuffer + (bmpImage->height - 1 - y) * bmpImage->width + x;
+            unsigned int* framebufferPtr = targetFramebuffer->baseAddress + bmpImage->width * y + x;
+            unsigned int* pixPtr = bmpImage->bitmapBuffer + (bmpImage->height - 1 - y) * bmpImage->width + x;
             *framebufferPtr = *pixPtr;
         }
     }
