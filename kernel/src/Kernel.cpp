@@ -64,11 +64,12 @@ extern "C" void _start(BootInfo* bootInfo)
     //renderer.NewLine();
     renderer.Print("LuftOS");
 
-    GUIRenderer guiRenderer = GUIRenderer(bootInfo->framebuffer);
+    GraphicsRenderer graphicsRenderer = GraphicsRenderer(bootInfo->framebuffer);
+    GUIRenderer guiRenderer = GUIRenderer(&graphicsRenderer);
 
     unsigned int windowX = 1920 / 2 - (1000 / 2);
     unsigned int windowY = 1080 / 2 - (500 / 2);
-    guiRenderer.NewWindow(windowX, windowY, 1000, 500);
+    guiRenderer.NewWindow(windowX, windowY, 800, 500);
 
     while (true);
 }
