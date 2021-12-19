@@ -60,8 +60,15 @@ extern "C" void _start(BootInfo* bootInfo)
     // Render desktop background
     renderer.FullScreenRenderBMP(bootInfo->bmpImage);
 
-    renderer.Print("Kernel initialized successfully.");
-    renderer.NewLine();
+    //renderer.Print("Kernel initialized successfully.");
+    //renderer.NewLine();
+    renderer.Print("LuftOS");
+
+    GUIRenderer guiRenderer = GUIRenderer(bootInfo->framebuffer);
+
+    unsigned int windowX = 1920 / 2 - (1000 / 2);
+    unsigned int windowY = 1080 / 2 - (500 / 2);
+    guiRenderer.NewWindow(windowX, windowY, 1000, 500);
 
     while (true);
 }

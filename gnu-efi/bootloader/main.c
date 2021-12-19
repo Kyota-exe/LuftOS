@@ -246,7 +246,6 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     bmpFile->SetPosition(bmpFile, headerSize);
     UINTN dibSizeSize = 4;
     bmpFile->Read(bmpFile, &dibSizeSize, &dibSize);
-    Print(L"dibSize: %d\n\r", dibSize);
     if (dibSize != 124 && dibSize != 108) // BITMAPV4HEADER or BITMAPV5HEADER
     {
         ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);
@@ -262,10 +261,6 @@ BMPImage* LoadBMPImage(EFI_FILE* directory, CHAR16* path, EFI_HANDLE image, Boot
     bmpFile->SetPosition(bmpFile, headerSize);
     BS->AllocatePool(EfiLoaderData, dibSize, (void**)&dibHeader);
     bmpFile->Read(bmpFile, &dibSize, dibHeader);
-
-    Print(L"DIB Size: %d\n\r", dibHeader->dibSize);
-    Print(L"Width: %d\n\r", dibHeader->width);
-    Print(L"Height: %d\n\r", dibHeader->height);
 
     if (dibHeader->bitsPerPixel != 32)
     {
