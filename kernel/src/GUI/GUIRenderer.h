@@ -26,6 +26,10 @@ private:
     static const unsigned int WINDOW_CLOSE_ICON_WIDTH;
     static const int WINDOW_CLOSE_ICON_SEPARATOR_X_FROM_RIGHT;
     static const uint32_t WINDOW_CLOSE_ICON_SEPARATOR_COLOUR;
+
+    // Window surrounding shadow
+    static const int WINDOW_SHADOW_LAYER_COUNT;
+    static const uint32_t WINDOW_SHADOW_LAYER_COLOURS[];
 };
 
 #endif

@@ -11,6 +11,7 @@ public:
     Framebuffer* framebuffer;
     void PutPixel(unsigned int x, unsigned int y, uint32_t colour, bool alpha = false);
     void FillRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height, uint32_t colour, bool alpha = false);
+    void DrawRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height, uint32_t colour, bool alpha = false);
     void DrawLine(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, uint32_t colour, bool alpha = false);
     GraphicsRenderer(Framebuffer* _framebuffer);
 

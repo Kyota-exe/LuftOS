@@ -44,6 +44,17 @@ void GraphicsRenderer::FillRect(unsigned int x, unsigned int y, unsigned int wid
     }
 }
 
+void GraphicsRenderer::DrawRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height, uint32_t colour, bool alpha)
+{
+    unsigned int right = x + width - 1;
+    unsigned int bottom = y + height - 1;
+
+    DrawLine(x, y, right, y, colour, alpha); // Top
+    DrawLine(x, bottom, right, bottom, colour, alpha); // Bottom
+    DrawLine(x, y + 1, x, bottom - 1, colour, alpha); // Left
+    DrawLine(right, y + 1, right, bottom - 1, colour, alpha); // Right
+}
+
 void GraphicsRenderer::DrawLine(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, uint32_t colour, bool alpha)
 {
     DDAAlgorithm(x0, y0, x1, y1, colour, alpha);
