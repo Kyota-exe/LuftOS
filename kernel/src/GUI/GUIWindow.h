@@ -2,12 +2,18 @@
 #define LUFTOS_GUIWINDOW_H
 
 #include "GUIRenderer.h"
+#include "../BasicRenderer.h"
+
+// Temporarily for framebuffer
+#include "../Kernel.h"
 
 class GUIWindow
 {
 public:
+    BasicRenderer* basicRenderer;
+
     void Draw();
-    GUIWindow(GraphicsRenderer* gRenderer,
+    GUIWindow(GraphicsRenderer* graphicsRenderer,
               unsigned int _x,
               unsigned int _y,
               unsigned int _width,

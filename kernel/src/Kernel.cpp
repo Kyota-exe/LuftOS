@@ -1,5 +1,9 @@
 #include "Kernel.h"
 
+// Temporarily for GUIWindow
+Framebuffer* framebuffer;
+Psf1Font* psf1Font;
+
 void InitializePaging(BootInfo* bootInfo)
 {
     // Request a page to store the kernel PLM4 and fill it with 0
@@ -12,7 +16,7 @@ void InitializePaging(BootInfo* bootInfo)
     uint64_t totalMemory = GetTotalMemorySize(bootInfo->memMap, memMapEntryCount, bootInfo->memDescSize);
     for (uint64_t i = 0; i < totalMemory; i += 4096)
     {
-        pageTableManager.MapMemory((void*) i, (void*) i);
+        pageTableManager.MapMemory((void*)i, (void*)i);
     }
 
     uint64_t framebufferBase = (uint64_t)bootInfo->framebuffer->baseAddress;
@@ -41,10 +45,13 @@ void InitializeGDT()
 
 extern "C" void _start(BootInfo* bootInfo)
 {
+    framebuffer = bootInfo->framebuffer;
+    psf1Font = bootInfo->psf1Font;
+
     InitializeGDT();
 
     // Initialize renderer and page frame allocator
-    BasicRenderer renderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font);
+    BasicRenderer basicRenderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font);
 
     // Initialize global page frame allocator
     globalPageFrameAllocator = PageFrameAllocator();
@@ -59,22 +66,22 @@ extern "C" void _start(BootInfo* bootInfo)
 
     // Render desktop background
 #pragma region Desktop background
-    if (bmpImage->height != targetFramebuffer->height || bmpImage->width != targetFramebuffer->width)
+    if (bootInfo->bmpImage->height != framebuffer->height || bootInfo->bmpImage->width != framebuffer->width)
     {
-        uint32_t previousColour = colour;
-        colour = 0xffff0000;
-        Print("BMP image is not the same resolution as the screen resolution!");
-        NewLine();
-        colour = previousColour;
+        uint32_t previousColour = basicRenderer.colour;
+        basicRenderer.colour = 0xffff0000;
+        basicRenderer.Print("BMP image is not the same resolution as the screen resolution!");
+        basicRenderer.NewLine();
+        basicRenderer.colour = previousColour;
     }
 
     // Bottom-up rendering
-    for (unsigned long y = 0; y < bmpImage->height; ++y)
+    for (unsigned int y = 0; y < bootInfo->bmpImage->height; ++y)
     {
-        for (unsigned long x = 0; x < bmpImage->width; ++x)
+        for (unsigned int x = 0; x < bootInfo->bmpImage->width; ++x)
         {
-            unsigned int* framebufferPtr = targetFramebuffer->baseAddress + bmpImage->width * y + x;
-            unsigned int* pixPtr = bmpImage->bitmapBuffer + (bmpImage->height - 1 - y) * bmpImage->width + x;
+            unsigned int* framebufferPtr = framebuffer->baseAddress + bootInfo->bmpImage->width * y + x;
+            unsigned int* pixPtr = bootInfo->bmpImage->bitmapBuffer + (bootInfo->bmpImage->height - 1 - y) * bootInfo->bmpImage->width + x;
             *framebufferPtr = *pixPtr;
         }
     }
@@ -82,7 +89,7 @@ extern "C" void _start(BootInfo* bootInfo)
 
     //renderer.Print("Kernel initialized successfully.");
     //renderer.NewLine();
-    renderer.Print("LuftOS");
+    basicRenderer.Print("LuftOS");
 
     GraphicsRenderer graphicsRenderer = GraphicsRenderer(bootInfo->framebuffer);
     GUIRenderer guiRenderer = GUIRenderer(&graphicsRenderer);

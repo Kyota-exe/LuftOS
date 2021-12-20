@@ -26,9 +26,11 @@ const uint32_t GUIWindow::SHADOW_LAYER_COLOURS[SHADOW_LAYER_COUNT]
     0x14'00'00'00
 };
 
-GUIWindow::GUIWindow(GraphicsRenderer* graphicsRenderer, unsigned int _x, unsigned int _y,
-                     unsigned int _width, unsigned int _height): gRenderer(graphicsRenderer),
-                     x(_x), y(_y), width(_width), height(_height) { }
+GUIWindow::GUIWindow(GraphicsRenderer* graphicsRenderer, unsigned int _x, unsigned int _y, unsigned int _width,
+                     unsigned int _height): gRenderer(graphicsRenderer), x(_x), y(_y), width(_width), height(_height)
+{
+    *basicRenderer = BasicRenderer(framebuffer, psf1Font, {x, y + HEADER_HEIGHT}, 0xffffffff, 3);
+}
 
 void GUIWindow::Draw()
 {

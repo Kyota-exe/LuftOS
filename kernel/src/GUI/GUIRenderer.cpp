@@ -6,4 +6,5 @@ void GUIRenderer::NewWindow(unsigned int x, unsigned int y, unsigned int width, 
 {
     GUIWindow window = GUIWindow(gRenderer, x, y, width, height);
     window.Draw();
+    window.basicRenderer->Print("Hello world");
 }

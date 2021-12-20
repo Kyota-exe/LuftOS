@@ -25,4 +25,8 @@ struct BootInfo
 extern uint64_t kernelStart;
 extern uint64_t kernelEnd;
 
+// Temporarily for GUIWindow
+extern Framebuffer* framebuffer;
+extern Psf1Font* psf1Font;
+
 #endif

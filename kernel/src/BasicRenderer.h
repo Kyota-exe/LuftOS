@@ -14,6 +14,7 @@ public:
     Psf1Font* psf1Font;
     UIntVector2 cursorPosition;
     uint32_t colour;
+    int fontSizeMultiplier;
 
     void Print(const char* str);
     void PutChar(char c, unsigned int xOffset, unsigned int yOffset);
@@ -21,7 +22,8 @@ public:
 
     BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Font,
                   UIntVector2 _cursorPosition = {0, 0},
-                  unsigned int _colour = 0xffffffff);
+                  uint32_t _colour = 0xffffffff,
+                  unsigned int _fontSizeMultiplier = 1);
 
 private:
     static const int CHAR_WIDTH = 8;
