@@ -18,7 +18,6 @@ public:
     void Print(const char* str);
     void PutChar(char c, unsigned int xOffset, unsigned int yOffset);
     void NewLine();
-    void FullScreenRenderBMP(BMPImage* bmpImage);
 
     BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Font,
                   UIntVector2 _cursorPosition = {0, 0},

@@ -58,7 +58,27 @@ extern "C" void _start(BootInfo* bootInfo)
     InitializePaging(bootInfo);
 
     // Render desktop background
-    renderer.FullScreenRenderBMP(bootInfo->bmpImage);
+#pragma region Desktop background
+    if (bmpImage->height != targetFramebuffer->height || bmpImage->width != targetFramebuffer->width)
+    {
+        uint32_t previousColour = colour;
+        colour = 0xffff0000;
+        Print("BMP image is not the same resolution as the screen resolution!");
+        NewLine();
+        colour = previousColour;
+    }
+
+    // Bottom-up rendering
+    for (unsigned long y = 0; y < bmpImage->height; ++y)
+    {
+        for (unsigned long x = 0; x < bmpImage->width; ++x)
+        {
+            unsigned int* framebufferPtr = targetFramebuffer->baseAddress + bmpImage->width * y + x;
+            unsigned int* pixPtr = bmpImage->bitmapBuffer + (bmpImage->height - 1 - y) * bmpImage->width + x;
+            *framebufferPtr = *pixPtr;
+        }
+    }
+#pragma endregion
 
     //renderer.Print("Kernel initialized successfully.");
     //renderer.NewLine();
@@ -67,9 +87,11 @@ extern "C" void _start(BootInfo* bootInfo)
     GraphicsRenderer graphicsRenderer = GraphicsRenderer(bootInfo->framebuffer);
     GUIRenderer guiRenderer = GUIRenderer(&graphicsRenderer);
 
-    unsigned int windowX = 1920 / 2 - (1000 / 2);
-    unsigned int windowY = 1080 / 2 - (500 / 2);
-    guiRenderer.NewWindow(windowX, windowY, 800, 500);
+    unsigned int windowWidth = 800;
+    unsigned int windowHeight = 500;
+    guiRenderer.NewWindow(bootInfo->framebuffer->width / 2 - (windowWidth / 2),
+                          bootInfo->framebuffer->height / 2 - (windowHeight / 2),
+                          windowWidth, windowHeight);
 
     while (true);
 }

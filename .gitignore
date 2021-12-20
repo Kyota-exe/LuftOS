@@ -19,6 +19,7 @@ kernel/lib/Memory/Paging.o
 kernel/lib/Memory/PageMapIndexer.o
 kernel/lib/Memory/PageTableManager.o
 kernel/lib/GUI/GUIRenderer.o
+kernel/lib/GUI/GUIWindow.o
 kernel/lib/GDT/GDT.o
 kernel/lib/GDT/gdt_asm.o
 kernel/lib/Rendering/GraphicsRenderer.o

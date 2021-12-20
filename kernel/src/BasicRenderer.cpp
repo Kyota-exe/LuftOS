@@ -45,26 +45,3 @@ void BasicRenderer::NewLine()
     cursorPosition.x = 0;
     cursorPosition.y += CHAR_HEIGHT;
 }
-
-void BasicRenderer::FullScreenRenderBMP(BMPImage* bmpImage)
-{
-    if (bmpImage->height != targetFramebuffer->height || bmpImage->width != targetFramebuffer->width)
-    {
-        uint32_t previousColour = colour;
-        colour = 0xffff0000;
-        Print("BMP image is not the same resolution as the screen resolution!");
-        NewLine();
-        colour = previousColour;
-    }
-
-    // Bottom-up rendering
-    for (unsigned long y = 0; y < bmpImage->height; ++y)
-    {
-        for (unsigned long x = 0; x < bmpImage->width; ++x)
-        {
-            unsigned int* framebufferPtr = targetFramebuffer->baseAddress + bmpImage->width * y + x;
-            unsigned int* pixPtr = bmpImage->bitmapBuffer + (bmpImage->height - 1 - y) * bmpImage->width + x;
-            *framebufferPtr = *pixPtr;
-        }
-    }
-}
