@@ -51,7 +51,7 @@ extern "C" void _start(BootInfo* bootInfo)
     InitializeGDT();
 
     // Initialize renderer and page frame allocator
-    BasicRenderer basicRenderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font);
+    BasicRenderer basicRenderer = BasicRenderer(bootInfo->framebuffer, bootInfo->psf1Font, 0);
 
     // Initialize global page frame allocator
     globalPageFrameAllocator = PageFrameAllocator();

@@ -10,26 +10,20 @@ const unsigned int GUIWindow::HEADER_HEIGHT = 30;
 const uint32_t GUIWindow::CLOSE_ICON_COLOUR = 0xff'85'85'85;
 const int GUIWindow::CLOSE_ICON_OFFSET_X_FROM_RIGHT = -20;
 const int GUIWindow::CLOSE_ICON_OFFSET_Y = 14;
-const unsigned int GUIWindow::CLOSE_ICON_HEIGHT = 10;
-const unsigned int GUIWindow::CLOSE_ICON_WIDTH = 10;
+const unsigned int GUIWindow::CLOSE_ICON_HEIGHT = 8;
+const unsigned int GUIWindow::CLOSE_ICON_WIDTH = 8;
 const uint32_t GUIWindow::CLOSE_ICON_SEPARATOR_COLOUR = 0xff'52'52'52;
 const int GUIWindow::CLOSE_ICON_SEPARATOR_X_FROM_RIGHT = -40;
 
 // Window surrounding shadow
-const int GUIWindow::SHADOW_LAYER_COUNT = 5;
-const uint32_t GUIWindow::SHADOW_LAYER_COLOURS[SHADOW_LAYER_COUNT]
-{
-    0x64'00'00'00,
-    0x50'00'00'00,
-    0x3c'00'00'00,
-    0x28'00'00'00,
-    0x14'00'00'00
-};
+const uint32_t GUIWindow::SHADOW_COLOR = 0xff'00'00'00;
+const int GUIWindow::SHADOW_LAYER_COUNT = 10;
+const int GUIWindow::MAX_SHADOW_OPACITY = 180;
 
 GUIWindow::GUIWindow(GraphicsRenderer* graphicsRenderer, unsigned int _x, unsigned int _y, unsigned int _width,
                      unsigned int _height): gRenderer(graphicsRenderer), x(_x), y(_y), width(_width), height(_height)
 {
-    *basicRenderer = BasicRenderer(framebuffer, psf1Font, {x, y + HEADER_HEIGHT}, 0xffffffff, 3);
+    *basicRenderer = BasicRenderer(framebuffer, psf1Font, x , {x, y + HEADER_HEIGHT});
 }
 
 void GUIWindow::Draw()
@@ -64,6 +58,8 @@ void GUIWindow::Draw()
         unsigned int shadowY = y - i;
         unsigned int shadowWidth = (right + i) - shadowX;
         unsigned int shadowHeight = (bottom + i) - shadowY;
-        gRenderer->DrawRect(shadowX, shadowY, shadowWidth, shadowHeight, SHADOW_LAYER_COLOURS[i - 1], true);
+
+        char alpha = MAX_SHADOW_OPACITY - i * MAX_SHADOW_OPACITY / SHADOW_LAYER_COUNT;
+        gRenderer->DrawRect(shadowX, shadowY, shadowWidth, shadowHeight, alpha << 24 | 0x00'00'00'00, true);
     }
 }

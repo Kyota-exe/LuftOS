@@ -51,5 +51,5 @@ buildimg:
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BOOTEFI) ::/EFI/BOOT
 	mcopy -i $(BUILDDIR)/$(OSNAME).img startup.nsh ::
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/kernel.elf ::
-	mcopy -i $(BUILDDIR)/$(OSNAME).img files/zap-light16.psf ::
+	mcopy -i $(BUILDDIR)/$(OSNAME).img files/zap-vga16.psf ::
 	mcopy -i $(BUILDDIR)/$(OSNAME).img files/Desktop-Background.bmp ::

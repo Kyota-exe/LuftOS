@@ -43,8 +43,9 @@ private:
     static const int CLOSE_ICON_SEPARATOR_X_FROM_RIGHT;
 
     // Window surrounding shadow
+    static const uint32_t SHADOW_COLOR;
     static const int SHADOW_LAYER_COUNT;
-    static const uint32_t SHADOW_LAYER_COLOURS[];
+    static const int MAX_SHADOW_OPACITY;
 };
 
 #endif

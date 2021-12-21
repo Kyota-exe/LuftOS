@@ -404,7 +404,7 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE* systemTable)
     BootInfo bootInfo;
 
     // Load PSF1 font
-    Psf1Font* font = LoadPsf1Font(NULL, L"zap-light16.psf", image, &bootInfo);
+    Psf1Font* font = LoadPsf1Font(NULL, L"zap-vga16.psf", image, &bootInfo);
     if (font == NULL)
     {
         ST->ConOut->SetAttribute(ST->ConOut, EFI_RED);

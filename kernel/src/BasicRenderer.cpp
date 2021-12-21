@@ -1,8 +1,8 @@
 #include "BasicRenderer.h"
 
-BasicRenderer::BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Font,
+BasicRenderer::BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Font, unsigned int _leftBound,
                              UIntVector2 _cursorPosition, uint32_t _colour, unsigned int _fontSizeMultiplier) :
-                             targetFramebuffer(_targetFramebuffer), psf1Font(_psf1Font),
+                             targetFramebuffer(_targetFramebuffer), psf1Font(_psf1Font), leftBound(_leftBound),
                              cursorPosition(_cursorPosition), colour(_colour), fontSizeMultiplier(_fontSizeMultiplier) { }
 
 void BasicRenderer::PutChar(char c, unsigned int xOffset, unsigned int yOffset)
@@ -29,11 +29,17 @@ void BasicRenderer::PutChar(char c, unsigned int xOffset, unsigned int yOffset)
     }
 }
 
-void BasicRenderer::Print(const char* str)
+void BasicRenderer::Print(const char* str, const char* end)
 {
     char* chr = (char*)str;
     while (*chr != 0)
     {
+        if (*chr == '\n')
+        {
+            chr++;
+            NewLine();
+            continue;
+        }
         // 16 and 8 (glyph pixel size) are hardcoded
         PutChar(*chr, cursorPosition.x, cursorPosition.y);
         cursorPosition.x += CHAR_WIDTH * fontSizeMultiplier;
@@ -44,10 +50,11 @@ void BasicRenderer::Print(const char* str)
         }
         chr++;
     }
+    if (end[0] != 0) Print(end, "");
 }
 
 void BasicRenderer::NewLine()
 {
-    cursorPosition.x = 0;
+    cursorPosition.x = leftBound;
     cursorPosition.y += CHAR_HEIGHT * fontSizeMultiplier;
 }
