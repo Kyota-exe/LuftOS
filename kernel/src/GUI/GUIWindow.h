@@ -39,8 +39,19 @@ private:
     static const int CLOSE_ICON_OFFSET_Y;
     static const unsigned int CLOSE_ICON_HEIGHT;
     static const unsigned int CLOSE_ICON_WIDTH;
-    static const uint32_t CLOSE_ICON_SEPARATOR_COLOUR;
-    static const int CLOSE_ICON_SEPARATOR_X_FROM_RIGHT;
+
+    // Window Maximize Icon (Temporary)
+    static const uint32_t MAXIMIZE_ICON_COLOUR;
+    static const int MAXIMIZE_ICON_OFFSET_X_FROM_RIGHT;
+    static const int MAXIMIZE_ICON_OFFSET_Y;
+    static const unsigned int MAXIMIZE_ICON_HEIGHT;
+    static const unsigned int MAXIMIZE_ICON_WIDTH;
+
+    // Window Minimize Icon (Temporary)
+    static const uint32_t MINIMIZE_ICON_COLOUR;
+    static const int MINIMIZE_ICON_OFFSET_X_FROM_RIGHT;
+    static const int MINIMIZE_ICON_OFFSET_Y;
+    static const unsigned int MINIMIZE_ICON_WIDTH;
 
     // Window surrounding shadow
     static const uint32_t SHADOW_COLOR;

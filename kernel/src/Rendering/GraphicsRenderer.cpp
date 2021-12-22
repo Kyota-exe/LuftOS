@@ -1,6 +1,6 @@
 #include "GraphicsRenderer.h"
 
-GraphicsRenderer::GraphicsRenderer(Framebuffer* _framebuffer): framebuffer(_framebuffer) { }
+GraphicsRenderer::GraphicsRenderer(Framebuffer* _framebuffer): framebuffer(_framebuffer), rectMode(RectMode::Corner) { }
 
 void GraphicsRenderer::PutPixel(unsigned int x, unsigned int y, uint32_t colour, bool alpha)
 {
@@ -35,24 +35,71 @@ void GraphicsRenderer::FillRect(unsigned int x, unsigned int y, unsigned int wid
         return;
     }
 
-    for (unsigned int currentY = y; currentY < y + height; ++currentY)
+    switch (rectMode)
     {
-        for (unsigned int currentX = x; currentX < x + width; ++currentX)
+        case Corner:
         {
-            PutPixel(currentX, currentY, colour, alpha);
+            for (unsigned int currentY = y; currentY < y + height; ++currentY)
+            {
+                for (unsigned int currentX = x; currentX < x + width; ++currentX)
+                {
+                    PutPixel(currentX, currentY, colour, alpha);
+                }
+            }
+            break;
+        }
+        case Center:
+        {
+            if (width % 2 != 0 || height % 2 != 0)
+            {
+                // ERROR
+                return;
+            }
+
+            for (unsigned int currentY = y - height / 2; currentY < y + height / 2; ++currentY)
+            {
+                for (unsigned int currentX = x - width / 2; currentX < x + width / 2; ++currentX)
+                {
+                    PutPixel(currentX, currentY, colour, alpha);
+                }
+            }
+            break;
         }
     }
 }
 
 void GraphicsRenderer::DrawRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height, uint32_t colour, bool alpha)
 {
-    unsigned int right = x + width - 1;
-    unsigned int bottom = y + height - 1;
+    switch (rectMode)
+    {
+        case Corner:
+        {
+            unsigned int right = x + width - 1;
+            unsigned int bottom = y + height - 1;
 
-    DrawLine(x, y, right, y, colour, alpha); // Top
-    DrawLine(x, bottom, right, bottom, colour, alpha); // Bottom
-    DrawLine(x, y + 1, x, bottom - 1, colour, alpha); // Left
-    DrawLine(right, y + 1, right, bottom - 1, colour, alpha); // Right
+            DrawLine(x, y, right, y, colour, alpha); // Top
+            DrawLine(x, bottom, right, bottom, colour, alpha); // Bottom
+            DrawLine(x, y, x, bottom, colour, alpha); // Left
+            DrawLine(right, y, right, bottom, colour, alpha); // Right
+            break;
+        }
+        case Center:
+        {
+            if (width % 2 != 0 || height % 2 != 0)
+            {
+                // ERROR
+                return;
+            }
+
+            unsigned int halfWidth = width / 2;
+            unsigned int halfHeight = height / 2;
+            DrawLine(x - halfWidth, y - halfHeight, x + halfWidth, y - halfHeight, colour, alpha); // Top
+            DrawLine(x - halfWidth, y + halfHeight, x + halfWidth, y + halfHeight, colour, alpha); // Bottom
+            DrawLine(x - halfWidth, y - halfHeight, x - halfWidth, y + halfHeight, colour, alpha); // Left
+            DrawLine(x + halfWidth, y - halfHeight, x + halfWidth, y + halfHeight, colour, alpha); // Right
+            break;
+        }
+    }
 }
 
 void GraphicsRenderer::DrawLine(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, uint32_t colour, bool alpha)

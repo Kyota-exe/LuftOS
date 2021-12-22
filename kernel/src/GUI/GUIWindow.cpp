@@ -10,10 +10,21 @@ const unsigned int GUIWindow::HEADER_HEIGHT = 30;
 const uint32_t GUIWindow::CLOSE_ICON_COLOUR = 0xff'85'85'85;
 const int GUIWindow::CLOSE_ICON_OFFSET_X_FROM_RIGHT = -20;
 const int GUIWindow::CLOSE_ICON_OFFSET_Y = 14;
-const unsigned int GUIWindow::CLOSE_ICON_HEIGHT = 8;
-const unsigned int GUIWindow::CLOSE_ICON_WIDTH = 8;
-const uint32_t GUIWindow::CLOSE_ICON_SEPARATOR_COLOUR = 0xff'52'52'52;
-const int GUIWindow::CLOSE_ICON_SEPARATOR_X_FROM_RIGHT = -40;
+const unsigned int GUIWindow::CLOSE_ICON_HEIGHT = 10;
+const unsigned int GUIWindow::CLOSE_ICON_WIDTH = 10;
+
+// Window Maximize Icon (Temporary)
+const uint32_t GUIWindow::MAXIMIZE_ICON_COLOUR = 0xff'85'85'85;
+const int GUIWindow::MAXIMIZE_ICON_OFFSET_X_FROM_RIGHT = -60;
+const int GUIWindow::MAXIMIZE_ICON_OFFSET_Y = 14;
+const unsigned int GUIWindow::MAXIMIZE_ICON_HEIGHT = 10;
+const unsigned int GUIWindow::MAXIMIZE_ICON_WIDTH = 10;
+
+// Window Minimize Icon (Temporary)
+const uint32_t GUIWindow::MINIMIZE_ICON_COLOUR = 0xff'85'85'85;
+const int GUIWindow::MINIMIZE_ICON_OFFSET_X_FROM_RIGHT = -100;
+const int GUIWindow::MINIMIZE_ICON_OFFSET_Y = 14;
+const unsigned int GUIWindow::MINIMIZE_ICON_WIDTH = 10;
 
 // Window surrounding shadow
 const uint32_t GUIWindow::SHADOW_COLOR = 0xff'00'00'00;
@@ -47,11 +58,19 @@ void GUIWindow::Draw()
                         closeIconPosX + CLOSE_ICON_WIDTH / 2,
                         closeIconPosY - CLOSE_ICON_HEIGHT / 2,
                         CLOSE_ICON_COLOUR);
-    // Close icon separator
-    unsigned int closeIconSeparatorPos = right + CLOSE_ICON_SEPARATOR_X_FROM_RIGHT;
-    gRenderer->DrawLine(closeIconSeparatorPos, y, closeIconSeparatorPos, y + HEADER_HEIGHT - 1, CLOSE_ICON_SEPARATOR_COLOUR);
+
+    // Maximize Icon
+    gRenderer->rectMode = Center;
+    gRenderer->DrawRect(right + MAXIMIZE_ICON_OFFSET_X_FROM_RIGHT, y + MAXIMIZE_ICON_OFFSET_Y,
+                        MAXIMIZE_ICON_WIDTH, MAXIMIZE_ICON_HEIGHT, MAXIMIZE_ICON_COLOUR);
+
+    // Minimize Icon
+    gRenderer->DrawLine(right + MINIMIZE_ICON_OFFSET_X_FROM_RIGHT - MINIMIZE_ICON_WIDTH / 2, y + CLOSE_ICON_OFFSET_Y,
+                        right + MINIMIZE_ICON_OFFSET_X_FROM_RIGHT + MINIMIZE_ICON_WIDTH / 2, y + CLOSE_ICON_OFFSET_Y,
+                        MINIMIZE_ICON_COLOUR);
 
     // Shadow
+    gRenderer->rectMode = Corner;
     for (int i = 1; i <= SHADOW_LAYER_COUNT; ++i)
     {
         unsigned int shadowX = x - i;

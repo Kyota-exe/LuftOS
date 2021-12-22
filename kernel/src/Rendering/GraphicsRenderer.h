@@ -5,10 +5,18 @@
 #include "../Framebuffer.h"
 #include "../Utilities/Math.h"
 
+enum RectMode
+{
+    Corner,
+    Center
+};
+
 class GraphicsRenderer
 {
 public:
     Framebuffer* framebuffer;
+    RectMode rectMode;
+
     void PutPixel(unsigned int x, unsigned int y, uint32_t colour, bool alpha = false);
     void FillRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height, uint32_t colour, bool alpha = false);
     void DrawRect(unsigned int x, unsigned int y, unsigned int width, unsigned int height, uint32_t colour, bool alpha = false);
