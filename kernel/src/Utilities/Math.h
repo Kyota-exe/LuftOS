@@ -14,5 +14,6 @@ struct UIntVector2
 
 int abs(int n);
 int round(float n);
+unsigned int rand();
 
 #endif

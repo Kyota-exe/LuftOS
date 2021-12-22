@@ -3,7 +3,7 @@
 BasicRenderer::BasicRenderer(Framebuffer* _targetFramebuffer, Psf1Font* _psf1Font, unsigned int _leftBound,
                              UIntVector2 _cursorPosition, uint32_t _colour, unsigned int _fontSizeMultiplier) :
                              targetFramebuffer(_targetFramebuffer), psf1Font(_psf1Font), leftBound(_leftBound),
-                             cursorPosition(_cursorPosition), colour(_colour), fontSizeMultiplier(_fontSizeMultiplier) { }
+                             cursorPosition(_cursorPosition), colour(_colour), fontSizeMultiplier(_fontSizeMultiplier) { colours0 = 0; colours1 = 0; }
 
 void BasicRenderer::PutChar(char c, unsigned int xOffset, unsigned int yOffset)
 {
@@ -32,15 +32,39 @@ void BasicRenderer::PutChar(char c, unsigned int xOffset, unsigned int yOffset)
 void BasicRenderer::Print(const char* str, const char* end)
 {
     char* chr = (char*)str;
+
+    bool colorCodeNext = false;
+    uint32_t previousColor = colour;
+
     while (*chr != 0)
     {
-        if (*chr == '\n')
+        if (colorCodeNext)
         {
+            //colour = colours[(int)*chr];
+            if (*chr - '0' == 0)
+            {
+                colour = colours0;
+            }
+            else if (*chr - '0' == 1)
+            {
+                colour = colours1;
+            }
+            colorCodeNext = false;
             chr++;
-            NewLine();
             continue;
         }
-        // 16 and 8 (glyph pixel size) are hardcoded
+        else if (*chr == '\n')
+        {
+            NewLine();
+            chr++;
+            continue;
+        }
+        else if (*chr == '&')
+        {
+            colorCodeNext = true;
+            chr++;
+            continue;
+        }
         PutChar(*chr, cursorPosition.x, cursorPosition.y);
         cursorPosition.x += CHAR_WIDTH * fontSizeMultiplier;
         // Prevent overflow
@@ -50,7 +74,13 @@ void BasicRenderer::Print(const char* str, const char* end)
         }
         chr++;
     }
-    if (end[0] != 0) Print(end, "");
+
+    colour = previousColor;
+
+    if (end[0] != 0)
+    {
+        Print(end, "");
+    }
 }
 
 void BasicRenderer::NewLine()

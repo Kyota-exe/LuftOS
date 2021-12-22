@@ -43,3 +43,11 @@ int round(float n)
         return (int)(n - 0.5);
     }
 }
+
+unsigned short lfsr = 0x38af;
+unsigned int bit;
+unsigned int rand()
+{
+    bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1;
+    return lfsr = (lfsr >> 1) | (bit << 15);
+}
